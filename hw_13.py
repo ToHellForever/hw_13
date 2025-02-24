@@ -65,59 +65,119 @@ class TxtHandler:
 
 if __name__ == "__main__":
     txt_handler = TxtHandler("test.txt")
-    txt_handler.write("Привет, мир!")
-    txt_handler.append("Пока, мир!")
+    txt_handler.write("Привет, мир!\n")
+    txt_handler.append(f"Пока, мир!")
     txt_handler = txt_handler.read()
     print("Содержимое TXT:\n", txt_handler)
 
 
-class CSVHandler:
-    def __init__(self, filepath: str) -> None:
-        self.filepath = filepath
-
+class CSVFileHandler:
+    def __init__(self, file_path: str) -> None:
+        self.file_path = file_path
     def read(self) -> List[dict]:
-        """Читает CSV файл и возвращает список словарей."""
+        """
+        Читает данные из файла и возвращает список словарей
+        :return: список словарей
+        :raise FileNotFoundError: если файл не найден
+        :raise PermissionError: если нет прав на чтение файла
+        """
         try:
-            with open(self.filepath, 'r', newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
+            with open(self.file_path, "r", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
                 return list(reader)
         except FileNotFoundError:
             raise FileNotFoundError(f"Файл {self.file_path} не найден")
         except PermissionError:
             raise PermissionError(f"Нет прав на чтение файла {self.file_path}")
     def write(self, data: List[dict]) -> None:
-        """Записывает данные в CSV файл."""
+        """
+        Записывает данные в файл
+        :param data: данные для записи
+        :raise PermissionError: если нет прав на запись в файл
+        """
         try:
-            with open(self.filepath, 'w', newline='', encoding='utf-8') as csvfile:
-                if not data:
-                    return
+            with open(self.file_path, "w", newline="", encoding="utf-8") as file:
                 fieldnames = data[0].keys()
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(data)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Файл {self.filepath} не найден")
         except PermissionError:
-            raise PermissionError(f"Нет прав на запись в файл {self.filepath}")
+            raise PermissionError(f"Нет прав на запись в файл {self.file_path}")
     def append(self, data: List[dict]) -> None:
-        """Добавляет данные в CSV файл."""
+        """
+        Добавляет данные в файл
+        :param data: данные для записи
+        :raise PermissionError: если нет прав на запись в файл
+        """
         try:
-            with open(self.filepath, 'a', newline='', encoding='utf-8') as csvfile:
-                if not data:
-                    return
+            with open(self.file_path, "a", newline="", encoding="utf-8") as file:
                 fieldnames = data[0].keys()
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
                 writer.writerows(data)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Файл {self.filepath} не найден")
         except PermissionError:
-            raise PermissionError(f"Нет прав на запись в файл {self.filepath}")
-            
-if __name__ == '__main__':
-    csv_handler = CSVHandler('test.csv')
+            raise PermissionError(f"Нет прав на запись в файл {self.file_path}")
+        
+if __name__ == "__main__":
+    csv_handler = CSVFileHandler('test.csv')
     data_csv = [{'name': 'Alice', 'age': '30'}, {'name': 'Bob', 'age': '25'}]
     csv_handler.write(data_csv)
     csv_handler.append([{'name': 'Charlie', 'age': '35'}])
     content_csv = csv_handler.read()
     print("Содержимое CSV:\n", content_csv)
+
+
+class JSONFileHandler:
+    def __init__(self, file_path: str) -> None:
+        self.file_path = file_path
+    def read(self) -> List[dict]:
+        """
+        Читает данные из файла и возвращает список словарей
+        :return: список словарей
+        :raise FileNotFoundError: если файл не найден
+        :raise PermissionError: если нет прав на чтение файла
+        """
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Файл {self.file_path} не найден")
+        except PermissionError:
+            raise PermissionError(f"Нет прав на чтение файла {self.file_path}")
+    def write(self, data: List[dict]) -> None:
+        """
+        Записывает данные в файл
+        :param data: данные для записи
+        :raise PermissionError: если нет прав на запись в файл
+        """
+        try:
+            with open(self.file_path, "w", encoding="utf-8") as file:
+                json.dump(data, file, indent=4)
+        except PermissionError:
+            raise PermissionError(f"Нет прав на запись в файл {self.file_path}")
+    def append(self, data: List[dict]) -> None:
+        """
+        Добавляет данные в файл
+        :param data: данные для записи
+        :raise FileNotFoundError если файл не найден
+        :raise PermissionError: если нет прав на запись в файл\
+        """
+        try:
+            # чтение
+            current_data = self.read()
+            # объединение данных
+            current_data.extend(data)
+            # перезапись
+            self.write(current_data)
+        except FileNotFoundError:
+            # если файла нет - созданеи и внесение в него данных
+            self.write(data)
+        except PermissionError:
+            raise PermissionError(f"Нет прав на запись в файл {self.file_path}")
+        
+if __name__ == "__main__":
+    json_handler = JSONFileHandler("test.json")
+    data_json = [{'product': 'Laptop', 'price': 1500}, {'product': 'Phone', 'price': 800}]
+    json_handler.write(data_json)
+    json_handler.append([{'product': 'Tablet', 'price': 600}])
+    content_json = json_handler.read()
+    print("Содержимое JSON:\n", content_json)
